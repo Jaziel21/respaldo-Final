@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-verde mb-4">Agregar Nuevo Evento</h1>
+    
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="eventoForm">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Título *</label>
+                            <input type="text" class="form-control" name="titulo" required
+                                   placeholder="Ej: Presentación del libro 'El Jardín Secreto'">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Descripción *</label>
+                            <textarea class="form-control" name="descripcion" rows="4" required
+                                      placeholder="Describe el evento, incluye información importante..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Fecha y Hora *</label>
+                            <input type="datetime-local" class="form-control" name="fecha" 
+                                   id="fechaEvento" required>
+                            <small class="text-muted">Selecciona fecha y hora del evento</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Categoría *</label>
+                            <select class="form-control" name="categoria" required>
+                                <option value="">Seleccionar categoría</option>
+                                <option value="PRESENTACION">Presentación de Libro</option>
+                                <option value="CLUB_LECTURA">Club de Lectura</option>
+                                <option value="TALLER">Taller Literario</option>
+                                <option value="FIRMA">Firma de Autores</option>
+                                <option value="CONFERENCIA">Conferencia</option>
+                                <option value="LANZAMIENTO">Lanzamiento</option>
+                                <option value="INFANTIL">Evento Infantil</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Ubicación *</label>
+                            <input type="text" class="form-control" name="ubicacion" required
+                                   placeholder="Ej: Sala Principal de la Librería">
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Capacidad</label>
+                                    <input type="number" class="form-control" name="capacidad" 
+                                           value="50" min="1" max="200">
+                                    <small class="text-muted">Número máximo de personas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Precio ($)</label>
+                                    <input type="number" step="0.01" class="form-control" 
+                                           name="precio" value="0" min="0">
+                                    <small class="text-muted">0 para eventos gratuitos</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Imagen del Evento</label>
+                            <input type="file" class="form-control" name="imagen" 
+                                   accept="image/*" id="imagenEvento">
+                            <small class="text-muted">Tamaño recomendado: 800x400px. Formatos: JPG, PNG</small>
+                            <div class="mt-2" id="previewImagen"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" name="activo" 
+                           id="activo" checked>
+                    <label class="form-check-label" for="activo">
+                        <i class="fas fa-eye"></i> Evento activo (visible al público)
+                    </label>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-verde" id="btnSubmit">
+                        <i class="fas fa-calendar-plus"></i> Guardar Evento
+                    </button>
+                    <a href="{% url 'admin_eventos' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="button" class="btn btn-outline-info" onclick="previsualizarEvento()">
+                        <i class="fas fa-eye"></i> Previsualizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Establecer fecha mínima como hoy
+    const fechaInput = document.getElementById('fechaEvento');
+    const hoy = new Date();
+    const fechaHoy = hoy.toISOString().slice(0, 16);
+    fechaInput.min = fechaHoy;
+    
+    // Establecer valor predeterminado (mañana a las 19:00)
+    const manana = new Date();
+    manana.setDate(manana.getDate() + 1);
+    manana.setHours(19, 0, 0, 0);
+    const fechaManana = manana.toISOString().slice(0, 16);
+    fechaInput.value = fechaManana;
+    
+    // Preview de imagen
+    const imagenInput = document.getElementById('imagenEvento');
+    const previewDiv = document.getElementById('previewImagen');
+    
+    imagenInput.addEventListener('change', function() {
+        previewDiv.innerHTML = '';
+        
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'img-thumbnail';
+                img.style.maxWidth = '200px';
+                img.style.maxHeight = '150px';
+                previewDiv.appendChild(img);
+            }
+            
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Validar formulario antes de enviar
+    document.getElementById('eventoForm').addEventListener('submit', function(e) {
+        const titulo = document.querySelector('input[name="titulo"]').value;
+        const descripcion = document.querySelector('textarea[name="descripcion"]').value;
+        const fecha = document.getElementById('fechaEvento').value;
+        const categoria = document.querySelector('select[name="categoria"]').value;
+        const ubicacion = document.querySelector('input[name="ubicacion"]').value;
+        
+        if (!titulo || !descripcion || !fecha || !categoria || !ubicacion) {
+            e.preventDefault();
+            alert('Por favor, completa todos los campos obligatorios (*)');
+            return false;
+        }
+        
+        // Mostrar loading
+        const btnSubmit = document.getElementById('btnSubmit');
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+        btnSubmit.disabled = true;
+    });
+});
+
+function previsualizarEvento() {
+    const titulo = document.querySelector('input[name="titulo"]').value || '[Sin título]';
+    const descripcion = document.querySelector('textarea[name="descripcion"]').value || '[Sin descripción]';
+    const fecha = document.getElementById('fechaEvento').value;
+    const categoria = document.querySelector('select[name="categoria"]').value;
+    const ubicacion = document.querySelector('input[name="ubicacion"]').value || '[Sin ubicación]';
+    const capacidad = document.querySelector('input[name="capacidad"]').value || '50';
+    const precio = document.querySelector('input[name="precio"]').value || '0';
+    
+    let categoriaTexto = 'Presentación de Libro';
+    switch(categoria) {
+        case 'CLUB_LECTURA': categoriaTexto = 'Club de Lectura'; break;
+        case 'TALLER': categoriaTexto = 'Taller Literario'; break;
+        case 'FIRMA': categoriaTexto = 'Firma de Autores'; break;
+        case 'CONFERENCIA': categoriaTexto = 'Conferencia'; break;
+        case 'LANZAMIENTO': categoriaTexto = 'Lanzamiento'; break;
+        case 'INFANTIL': categoriaTexto = 'Evento Infantil'; break;
+    }
+    
+    let fechaFormateada = 'Fecha no seleccionada';
+    if (fecha) {
+        const fechaObj = new Date(fecha);
+        fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+    
+    const modalHTML = `
+        <div class="modal fade" id="previewModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-verde text-white">
+                        <h5 class="modal-title">👁️ Previsualización del Evento</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <span class="badge bg-primary">${categoriaTexto}</span>
+                            </div>
+                            <div class="card-body">
+                                <h4 class="text-verde">${titulo}</h4>
+                                <p>${descripcion}</p>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong><i class="fas fa-calendar"></i> Fecha:</strong><br>${fechaFormateada}</p>
+                                        <p><strong><i class="fas fa-map-marker-alt"></i> Ubicación:</strong><br>${ubicacion}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong><i class="fas fa-users"></i> Capacidad:</strong><br>${capacidad} personas</p>
+                                        <p><strong><i class="fas fa-tag"></i> Precio:</strong><br>${precio == '0' ? 'Gratuito' : '$' + precio}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle"></i> Esta es una previsualización de cómo se verá el evento en la página pública.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Crear y mostrar modal
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = modalHTML;
+    document.body.appendChild(modalContainer);
+    
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+    
+    // Remover modal después de cerrar
+    modalContainer.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modalContainer);
+    });
+}
+</script>
+
+<style>
+.form-control:focus {
+    border-color: var(--verde-principal);
+    box-shadow: 0 0 0 0.2rem rgba(46, 139, 87, 0.25);
+}
+.img-thumbnail {
+    border: 2px solid var(--verde-principal);
+}
+.spinner-border {
+    margin-right: 8px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,247 @@
+<!-- app_Libreria/templates/admin/eventos/listado.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-verde">Gestión de Eventos</h1>
+        <a href="{% url 'agregar_evento' %}" class="btn btn-verde">➕ Nuevo Evento</a>
+    </div>
+    
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-body">
+            <!-- Filtros -->
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Filtrar por:</label>
+                    <select class="form-select" id="filtroEventos">
+                        <option value="todos">Todos los eventos</option>
+                        <option value="proximos">Próximos eventos</option>
+                        <option value="pasados">Eventos pasados</option>
+                        <option value="activos">Solo activos</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Ordenar por:</label>
+                    <select class="form-select" id="ordenEventos">
+                        <option value="fecha_asc">Fecha (ascendente)</option>
+                        <option value="fecha_desc">Fecha (descendente)</option>
+                        <option value="titulo">Título A-Z</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="tablaEventos">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Imagen</th>
+                            <th>Título</th>
+                            <th>Fecha y Hora</th>
+                            <th>Ubicación</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evento in eventos %}
+                        <tr class="fila-evento" 
+                            data-fecha="{{ evento.fecha|date:'Y-m-d H:i' }}"
+                            data-activo="{{ evento.activo }}">
+                            <td><strong>#{{ evento.eventoid }}</strong></td>
+                            <td>
+                                {% if evento.imagen %}
+                                <img src="{{ evento.imagen.url }}" width="50" height="50" style="object-fit: cover;" class="rounded">
+                                {% else %}
+                                <img src="https://via.placeholder.com/50/2e8b57/ffffff?text=E" class="rounded">
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ evento.titulo }}</strong>
+                                {% if evento.descripcion %}
+                                <br><small class="text-muted">{{ evento.descripcion|truncatewords:5 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ evento.fecha|date:"d M Y" }}
+                                <br><small class="text-muted">{{ evento.fecha|time:"H:i" }}</small>
+                            </td>
+                            <td>{{ evento.ubicacion }}</td>
+                            <td>
+                                {% if evento.activo %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">
+                                    {% if evento.fecha|date:'Y-m-d' > hoy %}
+                                    Próximo
+                                    {% else %}
+                                    Pasado
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'editar_evento' evento.eventoid %}" class="btn btn-sm btn-outline-warning" title="Editar">
+                                        ✏️ Editar
+                                    </a>
+                                    <a href="{% url 'eliminar_evento' evento.eventoid %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                        🗑️ Eliminar
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                                    <h5>No hay eventos registrados</h5>
+                                    <p>Comienza creando el primer evento.</p>
+                                    <a href="{% url 'agregar_evento' %}" class="btn btn-verde">Crear Primer Evento</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Estadísticas -->
+            {% if eventos %}
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card text-white bg-primary">
+                        <div class="card-body text-center">
+                            <h4>{{ eventos.count }}</h4>
+                            <p>Total Eventos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-success">
+                        <div class="card-body text-center">
+                            <h4>{{ eventos_proximos|default:"0" }}</h4>
+                            <p>Próximos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body text-center">
+                            <h4>{{ eventos_activos|default:"0" }}</h4>
+                            <p>Activos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body text-center">
+                            <h4>{{ eventos_pasados|default:"0" }}</h4>
+                            <p>Pasados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hoy = new Date().toISOString().split('T')[0];
+    
+    // Filtro de eventos
+    document.getElementById('filtroEventos').addEventListener('change', function() {
+        const filtro = this.value;
+        const filas = document.querySelectorAll('.fila-evento');
+        
+        filas.forEach(fila => {
+            const fecha = fila.getAttribute('data-fecha');
+            const activo = fila.getAttribute('data-activo') === 'True';
+            const fechaEvento = new Date(fecha);
+            const hoyDate = new Date();
+            
+            let mostrar = true;
+            
+            switch(filtro) {
+                case 'proximos':
+                    mostrar = fechaEvento > hoyDate && activo;
+                    break;
+                case 'pasados':
+                    mostrar = fechaEvento <= hoyDate;
+                    break;
+                case 'activos':
+                    mostrar = activo;
+                    break;
+                case 'todos':
+                default:
+                    mostrar = true;
+            }
+            
+            fila.style.display = mostrar ? '' : 'none';
+        });
+    });
+    
+    // Ordenamiento
+    document.getElementById('ordenEventos').addEventListener('change', function() {
+        const orden = this.value;
+        const tabla = document.getElementById('tablaEventos');
+        const filas = Array.from(document.querySelectorAll('.fila-evento'));
+        
+        filas.sort((a, b) => {
+            const tituloA = a.cells[2].textContent.toLowerCase();
+            const tituloB = b.cells[2].textContent.toLowerCase();
+            const fechaA = new Date(a.getAttribute('data-fecha'));
+            const fechaB = new Date(b.getAttribute('data-fecha'));
+            
+            switch(orden) {
+                case 'fecha_asc':
+                    return fechaA - fechaB;
+                case 'fecha_desc':
+                    return fechaB - fechaA;
+                case 'titulo':
+                    return tituloA.localeCompare(tituloB);
+                default:
+                    return 0;
+            }
+        });
+        
+        // Reordenar filas en la tabla
+        const tbody = tabla.querySelector('tbody');
+        filas.forEach(fila => tbody.appendChild(fila));
+    });
+});
+</script>
+
+<style>
+.table th {
+    background-color: var(--verde-principal);
+    color: white;
+    border: none;
+}
+.table-hover tbody tr:hover {
+    background-color: rgba(46, 139, 87, 0.1);
+}
+.badge {
+    font-size: 0.75em;
+}
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ entrada.titulo }} - Blog{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Botón para volver al listado -->
+    <div class="mb-4">
+        <a href="{% url 'blog' %}" class="btn btn-outline-verde">
+            <i class="fas fa-arrow-left me-2"></i> Volver al Blog
+        </a>
+    </div>
+    
+    <article class="blog-detalle">
+        <!-- Encabezado del artículo -->
+        <header class="text-center mb-5">
+            {% if entrada.imagen %}
+            <div class="mb-4">
+                <img src="{{ entrada.imagen.url }}" alt="{{ entrada.titulo }}" 
+                     class="img-fluid rounded shadow" style="max-height: 400px; object-fit: cover;">
+            </div>
+            {% endif %}
+            
+            <!-- Categoría -->
+            <div class="mb-3">
+                <span class="badge bg-verde fs-6">
+                    {{ entrada.get_categoria_display }}
+                </span>
+            </div>
+            
+            <!-- Título -->
+            <h1 class="display-5 fw-bold text-verde">{{ entrada.titulo }}</h1>
+            
+            <!-- Metadatos -->
+            <div class="row justify-content-center mt-4">
+                <div class="col-md-8">
+                    <div class="d-flex justify-content-center align-items-center text-muted">
+                        <div class="me-4">
+                            <i class="fas fa-user-edit me-1"></i>
+                            <span>Por <strong>{{ entrada.autor.get_full_name|default:entrada.autor.username }}</strong></span>
+                        </div>
+                        <div>
+                            <i class="far fa-calendar-alt me-1"></i>
+                            <span>{{ entrada.fechapublicacion|date:"d M Y, H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Contenido del artículo -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <!-- Resumen (si existe) -->
+                {% if entrada.resumen %}
+                <div class="alert alert-light border-start border-4 border-verde mb-4">
+                    <h5 class="text-verde"><i class="fas fa-quote-left me-2"></i> Resumen</h5>
+                    <p class="mb-0">{{ entrada.resumen }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Contenido principal -->
+                <div class="contenido-blog fs-5">
+                    {{ entrada.contenido|safe }}
+                </div>
+                
+                <!-- Separador -->
+                <hr class="my-5">
+                
+                <!-- Información del autor -->
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <div class="rounded-circle bg-verde text-white d-flex align-items-center justify-content-center" 
+                                     style="width: 60px; height: 60px;">
+                                    <i class="fas fa-user fa-2x"></i>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <h5 class="card-title text-verde mb-1">
+                                    {{ entrada.autor.get_full_name|default:entrada.autor.username }}
+                                </h5>
+                                <p class="card-text text-muted mb-0">
+                                    <small>
+                                        <i class="fas fa-newspaper me-1"></i>
+                                        Artículo publicado en nuestro blog literario
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="d-flex justify-content-between mt-5">
+                    <a href="{% url 'blog' %}" class="btn btn-outline-verde">
+                        <i class="fas fa-book-open me-2"></i> Ver más artículos
+                    </a>
+                    <div>
+                        <button class="btn btn-outline-secondary me-2" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i> Imprimir
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="compartirArticulo()">
+                            <i class="fas fa-share-alt me-2"></i> Compartir
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </article>
+</div>
+
+<!-- JavaScript para compartir -->
+<script>
+function compartirArticulo() {
+    if (navigator.share) {
+        navigator.share({
+            title: document.title,
+            text: 'Mira este interesante artículo: {{ entrada.titulo }}',
+            url: window.location.href,
+        })
+        .then(() => console.log('Contenido compartido exitosamente'))
+        .catch((error) => console.log('Error al compartir:', error));
+    } else {
+        // Fallback para navegadores que no soportan Web Share API
+        const url = window.location.href;
+        const text = encodeURIComponent('Mira este artículo: {{ entrada.titulo }}');
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+    }
+}
+</script>
+
+<!-- Estilos -->
+<style>
+.blog-detalle {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.05);
+}
+
+.contenido-blog {
+    line-height: 1.8;
+}
+
+.contenido-blog h2 {
+    color: var(--verde-principal);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.contenido-blog h3 {
+    color: #555;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+}
+
+.contenido-blog p {
+    margin-bottom: 1.5rem;
+}
+
+.contenido-blog ul, .contenido-blog ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+}
+
+.contenido-blog blockquote {
+    border-left: 4px solid var(--verde-principal);
+    padding-left: 1.5rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: #555;
+}
+
+.contenido-blog img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+}
+
+.alert-light {
+    background-color: #f8f9fa;
+}
+
+.border-verde {
+    border-color: var(--verde-principal) !important;
+}
+
+.btn-outline-verde {
+    color: var(--verde-principal);
+    border-color: var(--verde-principal);
+}
+
+.btn-outline-verde:hover {
+    background-color: var(--verde-principal);
+    color: white;
+}
+</style>
+{% endblock %}

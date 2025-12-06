@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Blog - Librería{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Encabezado principal -->
+    <div class="text-center mb-5">
+        <h1 class="text-verde display-4 fw-bold">📚 Nuestro Blog Literario</h1>
+        <p class="lead text-muted mt-3">
+            Descubre artículos, reseñas, entrevistas y reflexiones sobre el maravilloso mundo de los libros.
+        </p>
+    </div>
+
+    <!-- Lista de blogs (sin filtros) -->
+    <div class="row">
+        {% if entradas %}
+            {% for entrada in entradas %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <!-- Imagen del blog -->
+                    {% if entrada.imagen %}
+                    <img src="{{ entrada.imagen.url }}" class="card-img-top" alt="{{ entrada.titulo }}" 
+                         style="height: 250px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                         style="height: 250px;">
+                        <i class="fas fa-book-open fa-4x text-verde opacity-50"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <!-- Fecha y categoría -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="text-muted">
+                                <i class="far fa-calendar-alt me-1"></i>
+                                {{ entrada.fechapublicacion|date:"d M Y" }}
+                            </small>
+                            <span class="badge bg-verde">
+                                {{ entrada.get_categoria_display }}
+                            </span>
+                        </div>
+                        
+                        <!-- Título -->
+                        <h3 class="card-title h4 text-verde">{{ entrada.titulo }}</h3>
+                        
+                        <!-- Resumen -->
+                        <p class="card-text text-muted">
+                            {% if entrada.resumen %}
+                                {{ entrada.resumen|truncatewords:30 }}
+                            {% else %}
+                                {{ entrada.contenido|striptags|truncatewords:30 }}
+                            {% endif %}
+                        </p>
+                        
+                        <!-- Autor -->
+                        <div class="d-flex align-items-center mt-3">
+                            <i class="fas fa-user-edit text-verde me-2"></i>
+                            <small class="text-muted">
+                                Por <strong>{{ entrada.autor.get_full_name|default:entrada.autor.username }}</strong>
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent border-top-0">
+                        <a href="{% url 'detalle_blog' entrada.blogid %}" class="btn btn-outline-verde w-100">
+                            <i class="fas fa-book-reader me-2"></i> Leer Artículo Completo
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- Mensaje cuando no hay blogs -->
+            <div class="col-12 text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-book-open fa-5x text-muted opacity-25"></i>
+                </div>
+                <h3 class="text-muted mb-3">No hay artículos publicados aún</h3>
+                <p class="text-muted">Pronto compartiremos contenido interesante sobre el mundo literario.</p>
+                <a href="{% url 'inicio' %}" class="btn btn-verde mt-3">
+                    <i class="fas fa-home me-2"></i> Volver al Inicio
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Paginación (si tienes muchas entradas) -->
+    {% if entradas.has_other_pages %}
+    <nav aria-label="Paginación de blogs" class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if entradas.has_previous %}
+            <li class="page-item">
+                <a class="page-link text-verde" href="?page={{ entradas.previous_page_number }}">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in entradas.paginator.page_range %}
+                {% if entradas.number == num %}
+                <li class="page-item active">
+                    <span class="page-link bg-verde border-verde">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link text-verde" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if entradas.has_next %}
+            <li class="page-item">
+                <a class="page-link text-verde" href="?page={{ entradas.next_page_number }}">
+                    Siguiente <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- CSS adicional -->
+<style>
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(46, 139, 87, 0.1) !important;
+}
+
+.card-img-top {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+.btn-outline-verde {
+    color: var(--verde-principal);
+    border-color: var(--verde-principal);
+}
+
+.btn-outline-verde:hover {
+    background-color: var(--verde-principal);
+    color: white;
+}
+
+.page-link.text-verde:hover {
+    background-color: rgba(46, 139, 87, 0.1);
+    color: var(--verde-principal);
+}
+</style>
+{% endblock %}

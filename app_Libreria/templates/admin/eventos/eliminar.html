@@ -1,0 +1,134 @@
+<!-- app_Libreria/templates/admin/eventos/eliminar.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Eliminar Evento</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Información del evento -->
+                    <div class="alert alert-info mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                {% if evento.imagen %}
+                                <img src="{{ evento.imagen.url }}" class="img-fluid rounded">
+                                {% else %}
+                                <div class="bg-light p-4 text-center rounded">
+                                    <i class="fas fa-calendar-times fa-3x text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-9">
+                                <h5 class="text-verde">{{ evento.titulo }}</h5>
+                                <p class="mb-1"><strong>Fecha:</strong> {{ evento.fecha|date:"d M Y H:i" }}</p>
+                                <p class="mb-1"><strong>Ubicación:</strong> {{ evento.ubicacion }}</p>
+                                <p class="mb-1"><strong>Categoría:</strong> {{ evento.get_categoria_display|default:"Sin categoría" }}</p>
+                                <p class="mb-0"><strong>Estado:</strong> 
+                                    <span class="badge {% if evento.activo %}bg-success{% else %}bg-danger{% endif %}">
+                                        {% if evento.activo %}Activo{% else %}Inactivo{% endif %}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Advertencia -->
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-circle"></i> ¡Atención!</h5>
+                        <p class="mb-2">Estás a punto de eliminar permanentemente este evento.</p>
+                        <ul class="mb-0">
+                            <li>Esta acción <strong>no se puede deshacer</strong></li>
+                            <li>Se eliminarán todos los datos del evento</li>
+                            <li>Si el evento tiene imagen, también se eliminará</li>
+                            <li>Los usuarios ya no podrán ver este evento</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Confirmación -->
+                    <div class="alert alert-light border">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmarEliminar">
+                            <label class="form-check-label text-danger" for="confirmarEliminar">
+                                <strong>Sí, entiendo que esta acción es permanente y deseo eliminar el evento</strong>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Formulario de eliminación -->
+                    <form method="post" id="formEliminar">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="submit" class="btn btn-danger btn-lg" id="btnEliminar" disabled>
+                                <i class="fas fa-trash"></i> Eliminar Permanentemente
+                            </button>
+                            <a href="{% url 'admin_eventos' %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <!-- Alternativa sugerida -->
+                    <div class="alert alert-success mt-4">
+                        <h6><i class="fas fa-lightbulb"></i> Alternativa recomendada</h6>
+                        <p class="mb-2">En lugar de eliminar, puedes:</p>
+                        <ul class="mb-2">
+                            <li>Marcar el evento como <strong>inactivo</strong> para mantenerlo en el historial</li>
+                            <li>Actualizar la fecha si es un evento recurrente</li>
+                            <li>Archivar la información para futuras referencias</li>
+                        </ul>
+                        <a href="{% url 'editar_evento' evento.eventoid %}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-edit"></i> Editar en lugar de eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('confirmarEliminar');
+    const btnEliminar = document.getElementById('btnEliminar');
+    
+    checkbox.addEventListener('change', function() {
+        btnEliminar.disabled = !this.checked;
+    });
+    
+    // Confirmación adicional al enviar
+    document.getElementById('formEliminar').addEventListener('submit', function(e) {
+        if (!confirm('¿Estás absolutamente seguro de que deseas eliminar este evento? Esta acción es irreversible.')) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Mostrar loading
+        btnEliminar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Eliminando...';
+        btnEliminar.disabled = true;
+    });
+});
+</script>
+
+<style>
+.card {
+    border: 2px solid #dc3545;
+}
+.alert-warning {
+    border-left: 4px solid #ffc107;
+}
+.alert-success {
+    border-left: 4px solid #198754;
+}
+.spinner-border {
+    margin-right: 8px;
+}
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 16px;
+}
+</style>
+{% endblock %}

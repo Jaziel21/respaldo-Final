@@ -1,0 +1,353 @@
+{% extends 'base.html' %}
+
+{% block title %}Eventos - Librería{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Encabezado principal -->
+    <div class="text-center mb-5">
+        <h1 class="text-verde display-4 fw-bold">📅 Eventos Literarios</h1>
+        <p class="lead text-muted mt-3">
+            Participa en nuestras actividades culturales: presentaciones de libros, talleres, clubes de lectura y más.
+        </p>
+    </div>
+
+    <!-- Filtros simples (opcional, puedes quitarlos si quieres) -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        <a href="?filtro=todos" class="btn btn-outline-verde {% if filtro_actual == 'todos' or not filtro_actual %}active{% endif %}">
+                            <i class="fas fa-calendar-alt me-2"></i>Todos los Eventos
+                        </a>
+                        <a href="?filtro=proximos" class="btn btn-outline-verde {% if filtro_actual == 'proximos' %}active{% endif %}">
+                            <i class="fas fa-clock me-2"></i>Próximos
+                        </a>
+                        <a href="?filtro=pasados" class="btn btn-outline-verde {% if filtro_actual == 'pasados' %}active{% endif %}">
+                            <i class="fas fa-history me-2"></i>Pasados
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de eventos -->
+    <div class="row">
+        {% if eventos %}
+            {% for evento in eventos %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <!-- Imagen del evento -->
+                    {% if evento.imagen %}
+                    <img src="{{ evento.imagen.url }}" class="card-img-top" alt="{{ evento.titulo }}" 
+                         style="height: 250px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                         style="height: 250px;">
+                        <i class="fas fa-calendar-day fa-4x text-verde opacity-50"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Indicador de evento próximo/pasado -->
+                    {% with hoy=request.now|default:now %}
+                    {% if evento.fecha > hoy %}
+                    <div class="position-absolute top-0 start-0 m-3">
+                        <span class="badge bg-success">
+                            <i class="fas fa-clock me-1"></i>Próximo
+                        </span>
+                    </div>
+                    {% else %}
+                    <div class="position-absolute top-0 start-0 m-3">
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-history me-1"></i>Realizado
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <div class="card-body">
+                        <!-- Fecha y categoría -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="far fa-calendar-alt text-verde me-2"></i>
+                                <small class="text-muted">
+                                    {{ evento.fecha|date:"d M Y, H:i" }}
+                                </small>
+                            </div>
+                            <span class="badge bg-info">
+                                {{ evento.get_categoria_display }}
+                            </span>
+                        </div>
+                        
+                        <!-- Título -->
+                        <h3 class="card-title h4 text-verde">{{ evento.titulo }}</h3>
+                        
+                        <!-- Ubicación -->
+                        <div class="mb-3">
+                            <i class="fas fa-map-marker-alt text-verde me-2"></i>
+                            <span class="text-muted">{{ evento.ubicacion }}</span>
+                        </div>
+                        
+                        <!-- Descripción -->
+                        <p class="card-text text-muted">
+                            {{ evento.descripcion|truncatewords:30 }}
+                        </p>
+                        
+                        <!-- Información adicional -->
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-users text-verde me-2"></i>
+                                    <small class="text-muted">
+                                        <strong>Capacidad:</strong> {{ evento.capacidad }} personas
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-tag text-verde me-2"></i>
+                                    <small class="text-muted">
+                                        <strong>Precio:</strong> 
+                                        {% if evento.precio > 0 %}
+                                            ${{ evento.precio }}
+                                        {% else %}
+                                            Gratuito
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent border-top-0 pt-0">
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-verde" data-bs-toggle="modal" data-bs-target="#modalEvento{{ evento.eventoid }}">
+                                <i class="fas fa-info-circle me-2"></i> Ver Detalles Completos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal para detalles del evento -->
+            <div class="modal fade" id="modalEvento{{ evento.eventoid }}" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-verde text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-calendar-day me-2"></i>{{ evento.titulo }}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                {% if evento.imagen %}
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <img src="{{ evento.imagen.url }}" class="img-fluid rounded" alt="{{ evento.titulo }}">
+                                </div>
+                                {% endif %}
+                                <div class="{% if evento.imagen %}col-md-6{% else %}col-12{% endif %}">
+                                    <h5 class="text-verde">Detalles del Evento</h5>
+                                    
+                                    <div class="mb-3">
+                                        <strong><i class="far fa-calendar-alt me-2"></i>Fecha y Hora:</strong><br>
+                                        {{ evento.fecha|date:"l, d F Y, H:i" }}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <strong><i class="fas fa-map-marker-alt me-2"></i>Ubicación:</strong><br>
+                                        {{ evento.ubicacion }}
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <strong><i class="fas fa-users me-2"></i>Capacidad:</strong><br>
+                                            {{ evento.capacidad }} personas
+                                        </div>
+                                        <div class="col-6">
+                                            <strong><i class="fas fa-tag me-2"></i>Precio:</strong><br>
+                                            {% if evento.precio > 0 %}
+                                                <span class="text-success h5">${{ evento.precio }}</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Gratuito</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <strong><i class="fas fa-layer-group me-2"></i>Categoría:</strong><br>
+                                        <span class="badge bg-info">{{ evento.get_categoria_display }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <h5 class="text-verde">Descripción</h5>
+                            <p>{{ evento.descripcion|linebreaks }}</p>
+                            
+                            {% if evento.fecha > hoy %}
+                            <div class="alert alert-success mt-3">
+                                <i class="fas fa-bell me-2"></i>
+                                <strong>¡Evento activo!</strong> Aún puedes participar. 
+                                {% if evento.precio > 0 %}
+                                    Recuerda que tiene un costo de ${{ evento.precio }}.
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <div class="alert alert-secondary mt-3">
+                                <i class="fas fa-history me-2"></i>
+                                Este evento ya se realizó. Espera próximas actividades.
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Cerrar
+                            </button>
+                            {% if evento.fecha > hoy %}
+                            <button type="button" class="btn btn-verde">
+                                <i class="fas fa-calendar-plus me-2"></i>Registrarme
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- Mensaje cuando no hay eventos -->
+            <div class="col-12 text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-calendar-times fa-5x text-muted opacity-25"></i>
+                </div>
+                <h3 class="text-muted mb-3">No hay eventos programados</h3>
+                <p class="text-muted">Pronto anunciaremos nuevas actividades literarias.</p>
+                <a href="{% url 'inicio' %}" class="btn btn-verde mt-3">
+                    <i class="fas fa-home me-2"></i> Volver al Inicio
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Si quieres mostrar eventos agrupados por mes -->
+    {% if eventos_por_mes and eventos %}
+    <div class="mt-5">
+        <h3 class="text-verde mb-4">📆 Eventos por Mes</h3>
+        {% for mes, eventos_mes in eventos_por_mes.items %}
+        <div class="card mb-4 border-verde">
+            <div class="card-header bg-verde text-white">
+                <h5 class="mb-0">{{ mes }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for evento_mes in eventos_mes %}
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 text-center me-3" style="width: 80px;">
+                                <div class="bg-light rounded p-2">
+                                    <div class="text-verde fw-bold">{{ evento_mes.fecha|date:"d" }}</div>
+                                    <div class="text-muted small">{{ evento_mes.fecha|date:"M" }}</div>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ evento_mes.titulo }}</h6>
+                                <p class="text-muted small mb-1">
+                                    <i class="far fa-clock me-1"></i>{{ evento_mes.fecha|date:"H:i" }}
+                                </p>
+                                <p class="text-muted small mb-0">
+                                    <i class="fas fa-map-marker-alt me-1"></i>{{ evento_mes.ubicacion }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- CSS adicional -->
+<style>
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(46, 139, 87, 0.15) !important;
+}
+
+.card-img-top {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+.btn-outline-verde {
+    color: var(--verde-principal);
+    border-color: var(--verde-principal);
+    border-radius: 20px;
+    padding: 0.375rem 1.25rem;
+}
+
+.btn-outline-verde:hover,
+.btn-outline-verde.active {
+    background-color: var(--verde-principal);
+    color: white;
+    border-color: var(--verde-principal);
+}
+
+.position-absolute .badge {
+    font-size: 0.7rem;
+    padding: 0.25em 0.5em;
+}
+
+.border-verde {
+    border-color: var(--verde-principal) !important;
+}
+
+.modal-header {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+</style>
+
+<!-- JavaScript para manejar el modal -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Si hay un filtro en la URL, mostrar el botón activo
+    const urlParams = new URLSearchParams(window.location.search);
+    const filtro = urlParams.get('filtro');
+    
+    if (!filtro) {
+        // Por defecto, mostrar "próximos"
+        const btnProximos = document.querySelector('a[href="?filtro=proximos"]');
+        if (btnProximos) {
+            btnProximos.classList.add('active');
+        }
+    }
+    
+    // Inicializar todos los tooltips (si usas Bootstrap tooltips)
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
